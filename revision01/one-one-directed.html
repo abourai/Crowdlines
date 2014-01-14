@@ -1,0 +1,362 @@
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+
+<script type="text/javascript">
+
+$(document).ready(function(){
+
+    // what happens when you click a topic?
+    $('a.course-b').click(function(event){
+        event.preventDefault();
+        
+        if(! $(this).hasClass('selected')) {
+            $(this).addClass('selected');
+        } else {
+            $(this).removeClass('selected');
+            }
+        
+        if( $('a.selected').length ) {
+            // some topics are selected
+            //$( '#noTopics' ).hide();
+            $( '#relatedTopics').show();
+            $( '#groupName' ).focus();  
+        } else {
+            // no topics are selected
+            $( '#relatedTopics' ).hide();
+            //$( '#form1' ).show();
+            //$( '#noTopics').show();
+            }
+        
+        });
+    
+    // hide these panels by default
+ //   $( '#relatedTopics' ).hide();
+    $( '#yourGroups' ).hide();
+ //   $( '#nextTopic' ).hide();
+    $( '#finished' ).hide();
+    
+    // event handlers for relatedness buttons
+    $( '#btnStronglyRelated' ).click(function(event){
+        event.preventDefault();
+        addGroup('strong');
+        });
+        
+    $( '#btnSomewhatRelated' ).click(function(event){
+        event.preventDefault();
+        addGroup('medium');
+        });
+        
+    $( '#btnWeaklyRelated' ).click(function(event){
+        event.preventDefault();
+        addGroup('weak');
+        });
+
+    // start with first topics
+    $( '#course-a-list li:nth-child(1) a' ).parent().show();
+    $( '#course-b-list li:nth-child(1) a' ).addClass('directed').parent().show();
+    
+    // event handler for "Next topic" button
+    $(' #btnNextTopic ').click(function(){
+        nextTopic();
+        });
+
+    });
+    
+function nextTopic() {
+    // clear the list of groups
+    $(' #groupList ').empty();
+    
+    // select the next focal topic
+    var directed = $('a.directed');
+    $(directed).removeClass('directed').parent().hide();
+    $(directed).parent().next().children('a').addClass('directed').parent().show();
+    
+    // hide certain panels
+    $( '#relatedTopics' ).hide();
+    $( '#yourGroups' ).hide();
+    $( '#nextTopic' ).hide();
+    }
+
+function addGroup(relatedness) {
+    var group = $('<input type="hidden" />');
+    
+    // input name
+    var name = $( '#groupName' ).val();
+    $(group).attr('name', name);
+    
+    // input value
+    var val = '';
+    $( 'a.selected ').each(function() {
+        val = val + $(this).attr('id') + '|';
+    });
+    val = val + relatedness; // add relatedness to end
+    $(group).attr('value', val);
+    
+    // append input
+    $( '#groupData' ).append(group);
+    
+    // now the group list
+    var numSelected = $( 'a.selected' ).length;
+    var li = $('<li>' + name + '</li>');
+//    $(li).css('background-image', 'url(img/notification-counter-' + numSelected + '.png)');
+    $(li).data('topics', val);
+    $(li).hover(function() {
+        var topics = $(this).data('topics');
+        var topics = topics.split('|');
+        for(var i=0; i<topics.length-1; i++) {
+            $('#' + topics[i]).css('color', 'orange');
+            }
+        },
+        function() {
+            $('a').css('color', '#333');
+        });
+    
+    // append to group list
+    $( '#groupList' ).append(li);
+    
+    // reset things
+    // unselect all topics
+    $( 'a.selected' ).each(function() {
+        // keep track of times selected
+        var timesSelected = $(this).data('timesSelected');
+        if(timesSelected) {
+            timesSelected = timesSelected + 1;
+        } else {
+            timesSelected = 1;
+            }
+        $(this).data('timesSelected', timesSelected);
+        // update icon
+        $(this).parent().css('background-image', 'url(img/notification-counter-' + timesSelected + '.png)');
+        // deselect
+        $(this).removeClass('selected');
+        });
+    // clear the group name textbox
+    $( '#groupName' ).val('');
+    // hide the related topics panel
+    $( '#relatedTopics' ).hide();
+  //  $( '#yourGroups' ).show();
+    $(' #nextTopic' ).show();
+    //$( '#form1' ).show();
+    //$( '#noTopics').show();
+    
+    }
+
+</script>
+
+<style type="text/css">
+
+body {
+    font-family: Helvetica, Arial, sans-serif;
+    }
+
+    
+#groupName {
+    width: 300px;
+    font-size: 16px;
+    padding: 0.5em;
+    }
+    
+ol, ul {
+    list-style: none;
+    padding: 0; margin: 0;
+    }
+
+li {
+    background: transparent no-repeat 0 50%;
+    padding-left: 16px;
+    margin-bottom: 0.5em;
+    }
+    
+#groupList li {
+    padding: 0;
+    }
+    
+textarea {
+    width: 300px;
+    height: 60px;
+    }
+
+td {
+    vertical-align: top;
+    }
+    
+th {
+    text-align: left;
+    font-weight: bold;
+    padding-bottom: 1em;
+    }
+    
+a {
+    padding: 3px 6px;
+    }
+    
+a:link, a:visited {
+    text-decoration: none;
+    color: #333;
+    }
+
+/*
+a.course-b:hover {
+    background-color: AliceBlue;
+    -moz-border-radius: 5px;
+    border-radius: 5px;
+    }
+ 
+    
+a.course-b.selected {
+    background-color: LightSkyBlue;
+    -moz-border-radius: 5px;
+    border-radius: 5px;
+    }
+*/ 
+#course-a-list li, #course-b-list li {
+    display: none;
+    }    
+
+/*
+.directed {
+    background-color: orange;
+    -moz-border-radius: 5px;
+    border-radius: 5px;
+    padding: 3px 6px;
+    }
+*/
+    
+h2 {
+    font-size: 22px;
+    }
+    
+</style>
+
+
+<table width="90%">
+
+<!--tr>
+    <th><a href="http://sonify.psych.gatech.edu/~walkerb/classes/intro/schedule.html">Psychology Course A</a></th>
+    <th><a href="http://www.psy.cmu.edu/~kotovsky/85102/schedule.php">Psychology Course B</a></th>
+    <th></th>
+</tr-->
+<tr>
+    <td style="width: 30%">
+        
+<h2 style="padding-left: 16px;">Topic A</h2>        
+        <ol id="course-a-list">  
+            
+<li><a id="a01" class="course-a"  href="http://sonify.psych.gatech.edu/~walkerb/classes/intro/pdf/01-intro-background.ppt.pdf">Introduction to the course and to psychology</a></li>
+<li><a id="a02" class="course-a" href="http://sonify.psych.gatech.edu/~walkerb/classes/intro/pdf/01B-history-of-psych.ppt.pdf">History of psychology</a></li>
+<li><a id="a03" class="course-a" href="http://sonify.psych.gatech.edu/~walkerb/classes/intro/pdf/02-research-methods.ppt.pdf">Research methods, measurement, basic statistics</a></li>
+<li><a id="a04" class="course-a" href="http://sonify.psych.gatech.edu/~walkerb/classes/intro/pdf/03-biological-basis.ppt.pdf">Biological basis and neural organization</a></li>
+<li><a id="a05" class="course-a" href="http://sonify.psych.gatech.edu/~walkerb/classes/intro/pdf/03B-brain-regions.ppt.pdf">Functional organization of the brain</a></li>
+<li><a id="a06" class="course-a" href="http://sonify.psych.gatech.edu/~walkerb/classes/intro/pdf/04-visual-neuro.ppt.pdf">Neuroscience and neural computation</a></li>
+<li><a id="a07" class="course-a" href="http://sonify.psych.gatech.edu/~walkerb/classes/intro/pdf/04-visual-neuro.ppt.pdf">Visual neuroscience</a></li>
+<li><a id="a08" class="course-a" href="http://sonify.psych.gatech.edu/~walkerb/classes/intro/pdf/05-sleep.ppt.pdf">Sleep, motivation, and learning</a></li>
+<li><a id="a09" class="course-a" href="http://sonify.psych.gatech.edu/~walkerb/classes/intro/pdf/05B-learning.ppt.pdf">Learning</a></li>
+<li><a id="a10" class="course-a" href="http://sonify.psych.gatech.edu/~walkerb/classes/intro/pdf/06-sensation-perception.ppt.pdf">Sensation and perception (vision and hearing)</a></li>
+<li><a id="a11" class="course-a" href="http://sonify.psych.gatech.edu/~walkerb/classes/intro/pdf/06-sensation-perception.ppt.pdf">Sensation and perception (other main senses)</a></li>
+<li><a id="a12" class="course-a" href="http://sonify.psych.gatech.edu/~walkerb/classes/intro/pdf/07-pattern-recognition.ppt.pdf">Pattern recognition</a></li>
+<li><a id="a13" class="course-a" href="http://sonify.psych.gatech.edu/~walkerb/classes/intro/pdf/08-memory.ppt.pdf">Memory</a></li>
+<li><a id="a14" class="course-a" href="http://sonify.psych.gatech.edu/~walkerb/classes/intro/pdf/09-concepts.ppt.pdf">Thoughts and concepts</a></li>
+<li><a id="a15" class="course-a" href="http://sonify.psych.gatech.edu/~walkerb/classes/intro/pdf/10-reasoning.ppt.pdf">Reasoning and decision making</a></li>
+<li><a id="a16" class="course-a" href="http://sonify.psych.gatech.edu/~walkerb/classes/intro/pdf/11-language.ppt.pdf">Language and thought</a></li>
+<li><a id="a17" class="course-a" href="http://sonify.psych.gatech.edu/~walkerb/classes/intro/pdf/12-cog-development.ppt.pdf">Cognitive development</a></li>
+<li><a id="a18" class="course-a" href="http://sonify.psych.gatech.edu/~walkerb/classes/intro/pdf/13-intelligence.ppt.pdf">Intelligence</a></li>
+<li><a id="a19" class="course-a" href="http://sonify.psych.gatech.edu/~walkerb/classes/intro/pdf/14-socialdevelopment.ppt.pdf">Social development</a></li>
+<li><a id="a20" class="course-a" href="http://sonify.psych.gatech.edu/~walkerb/classes/intro/pdf/15-socialcog-sexorient.ppt.pdf">Sexual orientation</a></li>
+<li><a id="a21" class="course-a" href="http://sonify.psych.gatech.edu/~walkerb/classes/intro/pdf/16-personality.ppt.pdf">Personality</a></li>
+<li><a id="a22" class="course-a" href="http://sonify.psych.gatech.edu/~walkerb/classes/intro/pdf/17-beliefs-attitudes.ppt.pdf">Attitudes and beliefs</a></li>
+<li><a id="a23" class="course-a" href="http://sonify.psych.gatech.edu/~walkerb/classes/intro/pdf/18-emotion.ppt.pdf">Emotion</a></li>
+<li><a id="a24" class="course-a" href="http://sonify.psych.gatech.edu/~walkerb/classes/intro/pdf/19-social-context.ppt.pdf">Social context</a></li>
+<li><a id="a25" class="course-a" href="http://sonify.psych.gatech.edu/~walkerb/classes/intro/pdf/21-psychopathology.ppt.pdf">Psychopathology</a></li>
+             
+        </ol>
+    </td>
+    <td>
+    
+<h2 style="padding-left: 16px;">Topic B</h2>
+        <ol id="course-b-list">
+<li><a id="b01" class="course-b"  href="http://www.psy.cmu.edu/~kotovsky/85102/lectures/slides/sleep-dream.ppt">Introduction to the course</a></li>
+<li><a id="b02" class="course-b" href="http://www.psy.cmu.edu/~kotovsky/85102/lectures/slides/sleep-dream.ppt">Sleeping and dreaming</a></li>
+<li><a id="b03" class="course-b" href="http://www.psy.cmu.edu/~kotovsky/85102/lectures/slides/dreams.ppt">Dreaming, intro to nervous system</a></li>
+<li><a id="b04" class="course-b" href="http://www.psy.cmu.edu/~kotovsky/85102/lectures/slides/brainsystems_9_5_ml.pptx">Brain function and evolution of complexity</a></li>
+<li><a id="b05" class="course-b" href="http://www.psy.cmu.edu/~kotovsky/85102/lectures/slides/brain1.ppt">Neurons and reflexes: a model</a></li>
+<li><a id="b06" class="course-b" href="http://www.psy.cmu.edu/~kotovsky/85102/lectures/slides/brain1.ppt">Brain, behavior, and thought</a></li>
+<li><a id="b07" class="course-b" href="http://www.psy.cmu.edu/~kotovsky/85102/lectures/slides/motivation.ppt">Motivation</a></li>
+<li><a id="b08" class="course-b" href="http://www.psy.cmu.edu/~kotovsky/85102/lectures/slides/motivation.ppt">Motivation and emotion</a></li>
+<li><a id="b09" class="course-b" href="http://www.psy.cmu.edu/~kotovsky/85102/lectures/slides/learning.ppt">Learning: Behaviorist and other views</a></li>
+<li><a id="b10" class="course-b" href="http://www.psy.cmu.edu/~kotovsky/85102/lectures/slides/perception-lec.ppt">Sensory systems, especially vision</a></li>
+<li><a id="b11" class="course-b" href="http://www.psy.cmu.edu/~kotovsky/85102/lectures/slides/perception-lec.ppt">Perception</a></li>
+<li><a id="b12" class="course-b" href="http://www.psy.cmu.edu/~kotovsky/85102/lectures/slides/perception-lec.ppt">Visual processing</a></li>
+<li><a id="b13" class="course-b" href="http://www.psy.cmu.edu/~kotovsky/85102/lectures/slides/Attention-memory.ppt">Attention and immediate memory</a></li>
+<li><a id="b14" class="course-b" href="http://www.psy.cmu.edu/~kotovsky/85102/lectures/slides/STM-WM.ppt">Memory functioning</a></li>
+<li><a id="b15" class="course-b" href="http://www.psy.cmu.edu/~kotovsky/85102/lectures/slides/STM-WM.ppt">Long-term memory and thinking</a></li>
+<li><a id="b16" class="course-b"  href="http://www.psy.cmu.edu/~kotovsky/85102/lectures/slides/prob-exprt.ppt">Thinking and problem solving</a></li>
+<li><a id="b17" class="course-b" href="http://www.psy.cmu.edu/~kotovsky/85102/lectures/slides/Lang-Langdev.ppt">Introduction to language</a></li>
+<li><a id="b18" class="course-b" href="http://www.psy.cmu.edu/~kotovsky/85102/lectures/slides/Gen-Cog-Dev.pptx">Development</a></li>
+<li><a id="b19" class="course-b" href="http://www.psy.cmu.edu/~kotovsky/85102/lectures/slides/soc-psych.ppt">Attitude and beliefs</a></li>
+<li><a id="b20" class="course-b" href="http://www.psy.cmu.edu/~kotovsky/85102/lectures/slides/soc-psych.ppt">Attitude consistency theories</a></li>
+<li><a id="b21" class="course-b" href="http://www.psy.cmu.edu/~kotovsky/85102/lectures/slides/soc-psych.ppt">Social influence: conformity, obedience, and personality</a></li>
+<li><a id="b22" class="course-b" href="http://www.psy.cmu.edu/~kotovsky/85102/lectures/slides/soc-bio.ppt">Nature, nurture, and aggression</a></li>
+<li><a id="b23" class="course-b" href="http://www.psy.cmu.edu/~kotovsky/85102/lectures/slides/Personal-Psychopath-treatment.ppt">Personality and psychopathology</a></li>
+<li><a id="b24" class="course-b" href="http://www.psy.cmu.edu/~kotovsky/85102/lectures/slides/Personal-Psychopath-treatment.ppt">Psychopathology</a></li>
+<li><a id="b25" class="course-b" href="http://www.psy.cmu.edu/~kotovsky/85102/lectures/slides/Personal-Psychopath-treatment.ppt">Treatment</a></li>
+        </ol>
+    </td>
+    <td style="width: 400px;">
+    
+<h1>Instructions</h1>
+
+<p>We need your help outlining a new <b>psychology</b> course for university students.</p>
+
+<p>There are two course topics (A and B) on the left.</p>
+<ol>
+<li>Carefully consider both topics.</li>
+<li>If the topics are related, give the relationship a name, and click the button that best describes the strength of their relationship.</li>
+<li>If the topics are <i>not</i> related, click the "Not related" button.</li>
+</ol>
+
+<p>Repeat this process until you've considered all the topics.</p>
+
+<div id="decision">
+
+    <h2>Are they related?</h2>
+
+    <p><b style="color: green;">Yes</b>: Use 1&ndash;3 words to give this relationship a name.</p> 
+    <input type="text" id="groupName" name="groupName" style="width: 300px;" />    
+
+    <p>How related are these topics?</p>
+    <button id="btnStronglyRelated">Strongly related</button> 
+    <button id="btnSomewhatRelated">Somewhat related</button> 
+    <button id="btnWeaklyRelated">Weakly related</button>
+    
+    <hr />
+    
+    <p><b style="color: red;">No</b>: There is no relationship between these topics.</p>
+    <button id="btnNextTopic">Next topic</button>
+
+</div>
+
+<form id="form1" name="form1">
+
+
+    <div id="groupData">
+    </div>
+
+
+<div id="finished">
+
+    <h2>Finished?</h2>
+
+    <p>Your feedback on this HIT (optional):</p>
+    <textarea name="feedback"></textarea>
+    <br />
+    <input type="submit" name="submit" value="Submit HIT" />
+
+</div>
+
+</form>
+
+    </td>
+    
+</tr>
+
+</table>
+

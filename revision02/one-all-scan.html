@@ -1,0 +1,1276 @@
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+<script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.10.3/jquery-ui.min.js"></script>
+
+<link type="text/css" rel="stylesheet" href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.10.3/themes/ui-lightness/jquery-ui.min.css" />
+
+<script type="text/javascript">
+
+// global var for group names (*cringe*)
+var groups = [];
+
+$(document).ready(function(){
+
+    // automatically give IDs to all topics
+    for(var i=0; i<$(' #course-a-list .title ').length; i++) {
+        $(' #course-a-list .title ').eq(i).attr('id','a'+(i+1));
+        }
+    
+    for(var i=0; i<$(' #course-b-list .title ').length; i++) {
+        $(' #course-b-list .title ').eq(i).attr('id','b'+(i+1));
+        }
+        
+    // add "Topic details" heading to all context boxes
+    $(' .content ').each(function(){
+        var topic = $(this).prev().children('span').text();
+        $(this).prepend('<h2>'+topic+'</h2>');
+    });
+        
+    // set up autocomplete
+    $(' #groupName ').autocomplete({
+        source: groups
+    });
+
+    // hover event handler for topics
+    $('div.title span').hover(function(){
+        $(this).parent().addClass('hovered');
+        $(this).parent().parent().children('div.content').show('fast');
+    }, function(){
+        $(this).parent().removeClass('hovered');
+        $(this).parent().parent().children('div.content').hide();
+    });
+    
+    // click event handler for topics
+    $('div.title span').click(function(){
+        $(this).parent().parent().children('div.content').hide(); // hide hovercard after click
+        
+        if(! $(this).parent().hasClass('selected')) {
+            $(this).parent().addClass('selected');
+        } else {
+            if( !$(this).parent().hasClass('directed') )
+                $(this).parent().removeClass('selected');
+            }
+            
+        var selectedA = $('#course-a-list .selected').length;
+        var selectedB = $('#course-b-list .selected').length;
+        if( selectedA && selectedB ) {
+            // at least 1 selected from each course
+            $(' #yourGroups ').show();
+            $(' #relatedTopics ').show();
+            $(' #finished ').hide();
+            $(' #groupName' ).val(''); // clear
+            $(' #groupName' ).focus();
+        } else {
+            $(' #relatedTopics ').hide();   
+            $(' #finished' ).show();      
+        }
+    });
+
+    
+    // hide Related Topics UI by default
+    $( '#relatedTopics' ).hide();
+    $(' #yourGroups' ).hide();
+    $( '#finished' ).hide();
+    
+    // start with first topic
+    $( '#course-a-list li:nth-child(1)' ).addClass('selected');
+    $( '#course-a-list li:nth-child(1)' ).addClass('directed');
+    $( '#course-a-list li:nth-child(1)' ).show();
+
+    // click event handler for "Add group" button
+    $( '#btnAddGroup' ).click(function(event){
+        event.preventDefault();
+        addGroup();
+        });
+        
+    // click event handler for "Next topic" button
+    $( '#btnNextTopic' ).click(function(event){
+        event.preventDefault();
+        nextTopic();
+        });
+
+    });
+
+function nextTopic() {    
+    // select the next focal topic
+    var directed = $('li.directed');
+    $(directed).removeClass('selected');
+    $(directed).removeClass('directed');
+    $(directed).hide();
+    $(directed).next().addClass('selected');
+    $(directed).next().addClass('directed');
+    $(directed).next().show();
+    
+    // hide certain panels
+    $( '#relatedTopics' ).hide();
+    // s$( '#finished' ).hide();
+    }
+
+function addGroup() {
+    var group = $('<input type="hidden" />');
+    
+    // input name
+    var name = $( '#groupName' ).val();
+    $(group).attr('name', name);
+    
+    // input value
+    var val = '';
+    $( '.selected ').each(function() {
+        val = val + $(this).attr('id') + '|';
+    });
+    $(group).attr('value', val);
+    
+    // append input
+    $( '#groupData' ).append(group);
+    
+    // add group name to global var for autocomplete
+    groups.push(name);
+    
+    // now add to the the group list
+    var numSelected = $( '.selected' ).length;
+    var li = $('<li>' + name + '</li>');
+//    $(li).css('background-image', 'url(img/notification-counter-' + numSelected + '.png)');
+    $(li).data('topics', val);
+    $(li).hover(function() {
+        var topics = $(this).data('topics');
+        var topics = topics.split('|');
+        for(var i=0; i<topics.length; i++) {
+            $('#' + topics[i]).css('color', 'orange');
+            }
+        },
+        function() {
+            $('div.title').css('color', '#333');
+        });
+    
+    // append to group list
+    $( '#groupList' ).append(li);
+    
+    // reset things
+    // unselect all topics
+    $( '.selected' ).each(function() {
+        // keep track of times selected
+        //var timesSelected = $(this).data('timesSelected');
+        //if(timesSelected) {
+        //    timesSelected = timesSelected + 1;
+        //} else {
+        //    timesSelected = 1;
+        //    }
+        //$(this).data('timesSelected', timesSelected);
+        // update icon
+        //$(this).parent().css('background-image', 'url(img/notification-counter-' + timesSelected + '.png)');
+        // deselect
+        $(this).removeClass('selected');
+        });
+    // clear the group name textbox
+    $( '#groupName' ).val('');
+    // hide the related topics panel
+    $( '#relatedTopics' ).hide();
+    $( '#finished' ).show();
+    //$( '#noTopics').show();
+    
+    }
+
+</script>
+
+<style type="text/css">
+
+body {
+    font-family: Helvetica, Arial, sans-serif;
+    font-size: 12pt;
+    }
+    
+td {
+    vertical-align: top;
+    }
+    
+div.content {
+    display: none;
+    }
+    
+ul {
+    margin: 0; padding: 0;
+    }
+    
+li.topic {
+    list-style: none;
+    margin: 0; padding: 0.25em 0;
+    }
+    
+li.topic li, #groupList li {
+    list-style: disc;
+    margin-left: 2em;
+    }
+    
+div.content {
+    position: absolute;
+    top: 10px; left: 800px;
+    border: 1px solid #ccc;
+    background-color: beige;
+    width: 400px;
+    padding: 0.5em 1em;
+    font-size: 10pt;
+    }
+    
+div.title span {
+    padding: 3px 6px;
+    }
+    
+.hovered span {
+    background-color: AliceBlue;
+    -moz-border-radius: 5px;
+    border-radius: 5px;
+    }
+    
+.selected span {
+    background-color: LightSkyBlue;
+    -moz-border-radius: 5px;
+    border-radius: 5px;
+    }
+    
+textarea {
+    width: 300px;
+    height: 60px;
+    }
+    
+#groupName {
+    width: 300px;
+    font-size: 16px;
+    padding: 0.5em;
+    }
+    
+h2 {
+    font-size: 16pt;
+    }
+    
+.directed span {
+    background-color: orange;
+    -moz-border-radius: 5px;
+    border-radius: 5px;
+    }
+    
+span.directed {
+    background-color: orange;
+    -moz-border-radius: 5px;
+    border-radius: 5px;
+    padding: 3px 6px;
+    }
+    
+ol li {
+    padding-bottom: 0.25em;
+    }
+    
+#course-a-list li.topic {
+    display: none;
+    } 
+    
+    
+</style>
+
+
+
+<table>
+
+<tr>
+    <td style="width: 400px;">
+        
+<h2>Course A</h2>
+        
+        <ul id="course-a-list">        
+            
+<li class="topic">
+    <div class="title"><span>Introduction to the course and to psychology</span></div>
+    <div class="content">
+        <p>Note: Read <a href="http://sonify.psych.gatech.edu/~walkerb/classes/intro/index.html">the syllabus</a> web page!!</p>
+        <p>Slides: <a href="http://sonify.psych.gatech.edu/~walkerb/classes/intro/pdf/01-intro-background.ppt.pdf">click here</a></p>
+    </div>
+</li>
+
+
+<li class="topic">
+    <div class="title"><span>History of psychology</span></div>
+    <div class="content">
+        <p>Slides: <a href="http://sonify.psych.gatech.edu/~walkerb/classes/intro/pdf/01B-history-of-psych.ppt.pdf">click here</a></p>
+    </div>
+</li>
+
+<li class="topic">
+    <div class="title"><span>Research methods, measurement, basic statistics</span></div>
+    <div class="content">
+        <p>See also: <a href="http://www.deakin.edu.au/hbs/GAGEPAGE/">Phineas Gage</a> Very extensive information.</p>
+        <p>Slides: <a href="http://sonify.psych.gatech.edu/~walkerb/classes/intro/pdf/02-research-methods.ppt.pdf">click here</a></p>
+    </div>
+</li>
+
+<li class="topic">
+    <div class="title"><span>Biological basis and neural organization</span></div>
+    <div class="content">
+        <p>See also: <a href="http://fates.cns.muskingum.edu/~psych/psycweb/history/broca.htm">Paul Broca</a>, <a href="http://www.nobel.se/medicine/laureates/1906/golgi-lecture.pdf">Golgi's Nobel Speech, 1906</a></p>
+        <p>Slides: <a href="http://sonify.psych.gatech.edu/~walkerb/classes/intro/pdf/03-biological-basis.ppt.pdf">click here</a></p>
+    </div>
+</li>
+
+<li class="topic">
+    <div class="title"><span>Functional organization of the brain</span></div>
+    <div class="content">
+        <p><a href="http://www9.biostr.washington.edu/da.html">Digital Anatomist</a> (first two sections deal with neuroanatomy. Very nice pictures) </p>
+        <p><a href="http://www.vh.org/adult/provider/anatomy/BrainAnatomy/5Hemispheres.html">Human Brain Disection</a> (really excellent pictures with labeled structures) </p>
+        <p><a href="http://krantzj.hanover.edu/Krantz/neurotut.html">NeuroTutorials</a> (John Krantz's pages at Hanover)</p>
+        <p>Slides: <a href="http://sonify.psych.gatech.edu/~walkerb/classes/intro/pdf/03B-brain-regions.ppt.pdf">click here</a></p>
+    </div>
+</li>
+
+<li class="topic">
+    <div class="title"><span>Neuroscience and neural computation</span></div>
+    <div class="content">
+        <p>Slides: <a href="http://sonify.psych.gatech.edu/~walkerb/classes/intro/pdf/04-visual-neuro.ppt.pdf">click here</a></p>
+    </div>
+</li>
+
+<li class="topic">
+    <div class="title"><span>Visual neuroscience</span></div>
+    <div class="content">
+
+        <p>See also:</p>
+        <p><a href="http://sonify.psych.gatech.edu/~walkerb/classes/intro/media/xhubel_weisel2.mov">Hubel & Weisel video</a> (quicktime) </p>
+        <p><a href="http://www.nobel.se/medicine/laureates/1981/hubel-lecture.pdf">David Hubel's Nobel Lecture</a> </p>
+        <p>Vision people mentioned in class: </p>
+        <p><a href="http://white.stanford.edu/wandell.html">Brian Wandell, Stanford University</a> </p>
+        <p><a href="http://brainmap.wustl.edu/vanessen.html">David Van Essen, Washington University</a> </p>
+
+        <p>Interesting Links: </p>
+ 
+        <p>See also:</p>
+        <p><a href="http://sonify.psych.gatech.edu/~walkerb/classes/intro/media/SplitBrpatient2.mov">Clip of Dr. Gazzaniga and Split Brain Patient</a></p>
+        <p>An <a href="http://sonify.psych.gatech.edu/~walkerb/classes/intro/media/xprosopagnosia2.mov">interesting clip of a <i>prosopagnosic</i></a>, someone that has difficulty recognizing faces </p>
+
+        <p>Interesting Links: </p>
+        <p><a href="http://www.dartmouth.edu/~cogneuro/Gazzaniga.html">Gazziniga's Lab</a> and <a href="http://ccn.dartmouth.edu/">Cognitive Neuroscience</a> at <a href="http://www.dartmouth.edu/">Dartmouth</a> </p>
+        <p><a href="http://designweb.otago.ac.nz/grant/psyc/TWOBRAIN.HTML">A site giving more info on split brain patients</a>, and <a href="http://faculty.washington.edu/chudler/split.html">another one</a> </p>
+        <p><a href="http://www.cog.brown.edu/~tarr/">Mike Tarr and his Lab at Brown</a></p>
+ 
+        <p>See also:</p>
+        <p><a href="http://sonify.psych.gatech.edu/~walkerb/classes/intro/media/capgras.mov">Video clip of Capgras delusion</a> </p>
+        <p><a href="http://sonify.psych.gatech.edu/~walkerb/classes/intro/media/epilepsytemporal.mov">Video clip of Temporal lobe epilepsy patient</a> </p>
+        <p><a href="http://www.bbsonline.org/documents/a/00/00/04/89/bbs00000489-00/bbs.rolls.html">Brain and Emotion</a> (a very long but fascinating article on brain structures involved in emotional experience)</p>
+
+        <p>Slides: <a href="http://sonify.psych.gatech.edu/~walkerb/classes/intro/pdf/04-visual-neuro.ppt.pdf">click here</a></p>
+    </div>
+</li>
+
+<li class="topic">
+    <div class="title"><span>Sleep, motivation, and learning</span></div>
+    <div class="content">
+        <p>Slides: <a href="http://sonify.psych.gatech.edu/~walkerb/classes/intro/pdf/05-sleep.ppt.pdf">click here</a></p>
+    </div>
+</li>
+      
+      
+<li class="topic">
+    <div class="title"><span>Learning</span></div>
+    <div class="content">
+    
+        <p>See also:</p>
+        <p><a href="http://www.stanford.edu/~dement/">Dr. Dement!</a> - This page is a gold mine for finding out more about all things related to sleep. </p>
+        <p><a href="http://sonify.psych.gatech.edu/~walkerb/classes/intro/media/sleepHobsondreams.mov">A short snippet on dreams</a> (34 mb) </p>
+        <p>A little clip on <a href="http://sonify.psych.gatech.edu/~walkerb/classes/intro/media/pavlov.mov">Pavlov</a>, it's a bit overcompressed but not bad...</p>
+        <p>Note: For Motivation section, be sure to read text book</p>
+    
+        <p>Slides: <a href="http://sonify.psych.gatech.edu/~walkerb/classes/intro/pdf/05B-learning.ppt.pdf">click here</a></p>
+    </div>
+</li>
+
+<li class="topic">
+    <div class="title"><span>Sensation and perception (vision and hearing)</span></div>
+    <div class="content">
+
+        <p>See also:</p>
+        <p>I have many links on my <a href="http://sonify.psych.gatech.edu/~walkerb/classes/perception/resources.html">Sensation and Perception Links</a> page.</p>
+
+        <p>Gustav Fechner is an important figure in psychophysics. Oddly enough, there is little on Fechner in English, so if you can read German this page is ok: </p>
+        <p><a href="http://gutenberg.spiegel.de/autoren/fechner.htm">Gustav Theodor Fechner</a></p>
+        
+        <p>Also note: We will have a choice of what "extra" sensation and perception topics to cover. Auditory pathology, speech, touch, pain, smell, taste, flavor, are all on the menu...so think about what you want to learn about, and tell me in class today. </p>
+
+        <p>Slides: <a href="http://sonify.psych.gatech.edu/~walkerb/classes/intro/pdf/06-sensation-perception.ppt.pdf">click here</a> (2.6MB!!)</p>
+    </div>
+</li>
+
+<li class="topic">
+    <div class="title"><span>Sensation and perception (other main senses)</span></div>
+    <div class="content">
+        <p>Balance, Pain, Taste, Smell, Flavor, etc. (see slides)</p>
+        <p>Slides: <a href="http://sonify.psych.gatech.edu/~walkerb/classes/intro/pdf/06-sensation-perception.ppt.pdf">click here</a></p>
+    </div>
+</li>
+
+<li class="topic">
+    <div class="title"><span>Pattern recognition</span></div>
+    <div class="content">
+
+        <p>See also:</p>
+        <p><a href="http://www.brl.ntt.co.jp/IllusionForum/basics/visual/index-e.html">Oodles of visual illusions with explanations</a> (requires some flash, some java, and other stuff) </p>
+        <p><a href="http://psychclassics.yorku.ca/Koffka/Perception/perception.htm">Perception: An introduction to Gestalt Theory</a> - Kurt Koffka (original article published in 1922) </p>
+        <p><a href="http://sonify.psych.gatech.edu/~walkerb/classes/intro/media/VisionNotaCameraBlackmore.mov">A little snippet on vision.</a>  Great soundtrack (that's sarcasm...) (17mb) </p>
+        <p>Speech Perception at the <a href="http://www.haskins.yale.edu/">HaskinsLab</a> at <a href="http://www.yale.edu/">Yale</a> </p>
+        <p><a href="http://www.haskins.yale.edu/haskins/MISC/SWS/sentences.html">Sinewave speech</a> and the more general page for these demos <a href="http://www.haskins.yale.edu/haskins/MISC/SWS/SWS.html">here</a> </p>
+        <p><a href="http://www.haskins.yale.edu/haskins/MISC/demo-liskabram/index.html">Categorical Perception</a></p> 
+        <p><a href="http://www.haskins.yale.edu/haskins/MISC/facilities.html">Other stuff at Haskins</a></p>
+
+        <p>Slides: <a href="http://sonify.psych.gatech.edu/~walkerb/classes/intro/pdf/07-pattern-recognition.ppt.pdf">click here</a></p>
+    </div>
+</li>
+
+<li class="topic">
+    <div class="title"><span>Memory</span></div>
+    <div class="content">
+
+        <p>See also:
+        <p>Parallel Distributed Processing / Connectionism / Neural Network Links </p>
+        <p><a href="http://www.psy.cmu.edu/psy/faculty/jmcclelland.html">James McClelland</a> - one of the original researchers on the question of word superiority effects and PDP models </p>
+        <p><a href="http://www.cnbc.cmu.edu/Resources/PDP++/PDP++.html">Software for building PDP style models</a> - very cool... </p>
+        <p><a href="http://www.socsci.kun.nl/~heuven/jiam/">The Java Interactive Activation Model</a> - a minimodel of the word superiority effect</p>
+
+        <p>Slides: <a href="http://sonify.psych.gatech.edu/~walkerb/classes/intro/pdf/08-memory.ppt.pdf">click here</a></p>
+    </div>
+</li>
+
+<li class="topic">
+    <div class="title"><span>Thoughts and concepts</span></div>
+    <div class="content">
+
+        <p>See also:</p>
+        <p><a href="http://www.neuro.uoregon.edu/ionmain/htdocs/faculty/posner.html">Mike Posner</a> at <a href="http://www.uoregon.edu/">University of Oregon</a> </p>
+        <p><a href="http://viscog.beckman.uiuc.edu/djs_lab/demos.html">Change Blindness demostrations</a> by <a href="http://www.psych.uiuc.edu/people/faculty/simons.html">Daniel Simons</a> of <a href="http://www.uiuc.edu/index.html">University of Illinois</a></p>
+
+        <p>Slides: <a href="http://sonify.psych.gatech.edu/~walkerb/classes/intro/pdf/09-concepts.ppt.pdf">click here</a></p>
+    </div>
+</li>
+      
+<li class="topic">
+    <div class="title"><span>Reasoning and decision making</span></div>
+    <div class="content">
+
+        <p>See also:</p>
+        <p><a href="http://sonify.psych.gatech.edu/~walkerb/classes/intro/media/amnesiac1.mov">Clip on Clive the amnesiac</a>.  Very highly recommended. </p>
+        <p>People whose work was mentioned in class today: </p>
+        <p><a href="http://psych.colorado.edu/~oreilly/">Randy O'Reilly</a> - computational modeling of memory functions inhippocampus and neocortex </p>
+        <p><a href="http://psychology.psy.bris.ac.uk/AlanBaddeley.html">Alan Baddeley</a> </p>
+        <p><a href="http://psych.mcmaster.ca/bbcs/hebbrec01.html">Brenda Milner</a>- She was one of the scientists to describe one of the original cases of memory disfunction due to hippocampal lesions (in a patient famously known as HM) </p>
+        <p><a href="http://www.ecs.soton.ac.uk/~harnad/Archive/hebb.html">Donald O. Hebb</a> - psychologist/neuroscientist pioneer.</p>
+
+        <p>Slides: <a href="http://sonify.psych.gatech.edu/~walkerb/classes/intro/pdf/10-reasoning.ppt.pdf">click here</a></p>
+    </div>
+</li>
+
+<li class="topic">
+    <div class="title"><span>Language and thought</span></div>
+    <div class="content">
+
+        <p>See also:</p>
+        <p><a href="http://www.cs.virginia.edu/oracle/">The Bacon Oracle</a> Small world networks </p>
+        <p><a href="http://www.nytimes.com/library/national/science/061698sci-smallworld.html">NY Times article</a> (requires free registration),</p>
+        <p>American Math. Soc. <a href="http://www.ams.org/new-in-math/small-world.html">Release</a> </p>
+        <p><a href="http://www.nd.edu/~alb/">Al Barabasi</a>- small world networks in the World Wide Web </p>
+        <p><a href="http://lsa.colorado.edu/">Latent Semantic Analysis</a> -Check out the Automated essay grader... </p>
+        <p><a href="http://locutus.ucr.edu/hds.html">Hyperdimensional Analog to Language (HAL)</a></p>
+
+        <p>Slides: <a href="http://sonify.psych.gatech.edu/~walkerb/classes/intro/pdf/11-language.ppt.pdf">click here</a></p>
+    </div>
+</li>
+
+
+<li class="topic">
+    <div class="title"><span>Cognitive development</span></div>
+    <div class="content">
+
+        <p>See also:</p>
+        <p><a href="http://www.princeton.edu/~psych/PsychSite/fac_kahneman.html">Daniel Kahneman</a> (ground breaking work with Amos Tversky on decision making), now a Nobel winner </p>
+        <p><a href="http://www.stanford.edu/dept/news/pr/02/grawemeyer20031211.html">Amos Tversky</a> (d. 1996) Rate which of the following pairs as more likely/common cause of death: Lung Cancer vs Motor vehicle accident; Emphysema vs homicide; Tuberculosis vs Fire and Flames</p>
+
+        <p>Slides: <a href="http://sonify.psych.gatech.edu/~walkerb/classes/intro/pdf/12-cog-development.ppt.pdf">click here</a></p>
+    </div>
+</li>
+
+
+<li class="topic">
+    <div class="title"><span>Intelligence</span></div>
+    <div class="content">
+
+<p>A couple of interesting video clips on language development: </p>
+        <p><a href="http://sonify.psych.gatech.edu/~walkerb/classes/intro/media/language_acq.mov">Acquisition</a> - this discusses the ideas of Chomsky and also the role of social interaction, especially with Mothers in helping bootstrap language acquisition.
+
+        <p><a href="http://sonify.psych.gatech.edu/~walkerb/classes/intro/media/stages_language.mov">Stages</a> - this discusses the basic stages of language acquisition from early exposure, babbling, one and two word utterances. </p>
+
+        <p>Statistical learning - Here are sound demos that suggest that infants (and tamarins) can learn the sequential probabilities that can guide the segmentation of the speech stream into words. </p>
+
+        <p><a href="http://sonify.psych.gatech.edu/~walkerb/classes/intro/media/stream.wav">Stream</a> - here the phonetic segments are played continuously and "words" are those sequences of segments that are consistent (e.g., tudaro) and nonwords are those that are not consistent (pabiku).  Consistency here means that /tu/,/da/, and /ro/ always appear together, where as /pa/, /bi/, and /ku/ occur together sometimes but often they don't.   Infants pick up on this and it probably is critical in getting the word learning process started. This work is from the lab of <a href="http://psych.wisc.edu/faculty/bio/saffran.html">Jennifer Saffran</a> (Wisconsin), and <a href="http://www.bcs.rochester.edu/people/aslin/r_aslin.html">Richard Aslin</a> (U of Rochester)</p>
+        
+        <p>See also:</p>
+        <p>Eye tracking studies of ambiguity resolution </p>
+        <p><a href="http://sonify.psych.gatech.edu/~walkerb/classes/intro/media/adult1a.mov">Adult ambiguous</a> </p>
+        <p><a href="http://sonify.psych.gatech.edu/~walkerb/classes/intro/media/adult2a.mov">Adult ambiguous</a> </p>
+        <p><a href="http://sonify.psych.gatech.edu/~walkerb/classes/intro/media/adult2u.mov">Adult unambiguous</a> </p>
+        <p><a href="http://sonify.psych.gatech.edu/~walkerb/classes/intro/media/5yr1a.mov">5 year old, ambiguous</a> </p>
+        <p><a href="http://sonify.psych.gatech.edu/~walkerb/classes/intro/media/5yr1u.mov">5 year old, unambiguous</a> These clips from the <a href="http://www.cis.upenn.edu/~ircs/Trueswellabs/index.html">lab</a> of <a href="http://www.psych.upenn.edu/~trueswel/">John Trueswell</a> (U of Pennsylvania)</p>
+
+        <p>Slides: <a href="http://sonify.psych.gatech.edu/~walkerb/classes/intro/pdf/13-intelligence.ppt.pdf">click here</a></p>
+    </div>
+</li>
+
+<li class="topic">
+    <div class="title"><span>Social development</span></div>
+    <div class="content">
+        <p>Slides: <a href="http://sonify.psych.gatech.edu/~walkerb/classes/intro/pdf/14-socialdevelopment.ppt.pdf">click here</a></p>
+    </div>
+</li>
+
+<li class="topic">
+    <div class="title"><span>Sexual orientation</span></div>
+    <div class="content">
+
+        <p>See also:</p>
+        <p><a href="http://sonify.psych.gatech.edu/~walkerb/classes/intro/media/harlow_attach.mov">Harlow's wire and cloth monkeys </a></p>
+
+        <p><a href="http://www.apa.org/pubinfo/answers.html">American Psychological Association's page on Sexual Orientation</a></p>
+
+        <p>Slides: <a href="http://sonify.psych.gatech.edu/~walkerb/classes/intro/pdf/15-socialcog-sexorient.ppt.pdf">click here</a></p>
+    </div>
+</li>
+
+<li class="topic">
+    <div class="title"><span>Personality</span></div>
+    <div class="content">
+    
+        <p>See also:</p>
+        <p><a href="http://sonify.psych.gatech.edu/~walkerb/classes/intro/media/metacognitive_dev.mov">Video clip on development of "Theory of Mind"</a></p>
+    
+        <p>Slides: <a href="http://sonify.psych.gatech.edu/~walkerb/classes/intro/pdf/16-personality.ppt.pdf">click here</a></p>
+    </div>
+</li>
+
+<li class="topic">
+    <div class="title"><span>Attitudes and beliefs</span></div>
+    <div class="content">
+        <p>Slides: <a href="http://sonify.psych.gatech.edu/~walkerb/classes/intro/pdf/17-beliefs-attitudes.ppt.pdf">click here</a></p>
+    </div>
+</li>
+
+<li class="topic">
+    <div class="title"><span>Emotion</span></div>
+    <div class="content">
+        <p>Slides: <a href="http://sonify.psych.gatech.edu/~walkerb/classes/intro/pdf/18-emotion.ppt.pdf">click here</a></p>
+    </div>
+</li>
+
+<li class="topic">
+    <div class="title"><span>Social context</span></div>
+    <div class="content">
+
+        <p>See also:
+        <p><a href="http://homepage.mac.com/dbem/homepage.html">Darryl Bem's pages</a> at the <a href="http://comp9.psych.cornell.edu/">Cornell Department of Psychology </a></p>
+        <p><a href="http://homepage.mac.com/dbem/ebe_theory.html">Bem's original Psychological Review paper</a> (extremely well written and in depth discussion of his theory) </p>
+        <p><a href="http://www.netfunny.com/rhf/jokes/90q3/baret.html">An interesting true story about Darryl and Sandy Bem's kids</a> (related more to gender roles really)</p>
+
+        <p>Slides: <a href="http://sonify.psych.gatech.edu/~walkerb/classes/intro/pdf/19-social-context.ppt.pdf">click here</a></p>
+    </div>
+</li>
+
+<li class="topic">
+    <div class="title"><span>Psychopathology</span></div>
+    <div class="content">
+        <p>Slides: <a href="http://sonify.psych.gatech.edu/~walkerb/classes/intro/pdf/21-psychopathology.ppt.pdf">click here</a></p>
+    </div>
+</li>
+             
+        </ul>
+    </td>
+    <td style="width: 400px;">
+    
+<h2>Course B</h2>
+        <ul id="course-b-list">
+        
+<li class="topic">
+    <div class="title"><span>Introduction to the course</span></div>
+    <div class="content">
+
+        <p>Today we will first introduce the course and some basic methodological issues in psychology. There will also be a presentation on the departmental research participation requirement. We will then will be looking at a part of our life that we have little access to, sleeping. We will, in looking at this issue, also get some exposure to a range of isssues, methodologies and approaches that are used in psychology. One question we will ask is whether and why we need to sleep.</p>
+
+        <p>The major topics we will be discussing include:</p>
+
+        <ul>
+            <li>Defining sleep</li>
+            <li>Sleep as a behavior</li>
+            <li>The behavior and role of the brain in the control of sleep</li>
+            <li>Theories of sleeping (why we sleep)</li>
+            <li>The necessity of sleep--do we need to do it?</li>
+        </ul>
+
+        <p><a href="http://www.psy.cmu.edu/~kotovsky/85102/readings/dement.html">Dement readingG</a></p>
+
+        <p>Slides: <a href="http://www.psy.cmu.edu/~kotovsky/85102/lectures/slides/sleep-dream.ppt">click here</a></p>
+    </div>
+</li>
+
+<li class="topic">
+    <div class="title"><span>Sleeping and dreaming</span></div>
+    <div class="content">
+
+        <p>Today we will be finish our discussion of sleep and then focus on interesting behavior that occurs within it; dreaming. We will complete any issues remaining from our discussion of sleep and then, with regard to dreaming, the basic question we will ask is what can we learn from our dreams? We will examine whether dreams are meaningful, whether they are "true" or predictive and how they differ from our other experiences.</p>
+
+        <p>The major topics we will discuss include the following:</p>
+
+        <ul>
+        <li>Dreams as behavior--characteristics and description</li>
+        <li>Brain function during dreaming</li>
+        <li>Rapid Eye Movements and dreaming</li>
+        <li>Theories of dreaming starting with dreams as meaningful events (the psychoanalytic perspective)</li>
+        </ul>
+
+        <p>(optional) <a href="http://www.psy.cmu.edu/~kotovsky/85102/readings/Creativity.html">Interesting study on sleep and creativity!</a></p>
+
+        <p>Slides: <a href="http://www.psy.cmu.edu/~kotovsky/85102/lectures/slides/sleep-dream.ppt">click here</a></p>
+    </div>
+</li>
+
+<li class="topic">
+    <div class="title"><span>Dreaming, intro to nervous system</span></div>
+    <div class="content">
+
+        <p>Today in lecture we will focus on dreaming, trying to answer a basic question: what can we learn from our dreams? We will examine whether dreams are meaningful, how they differ from our other experiences and whether they are "brain events" or "mind events". Having started on this topic last class, we will begin with the "Who dreams" and "Theories of dreaming" topics below.</p>
+
+        <p>The major topics we will be discussing include:</p>
+
+        <ul>
+            <li>Dreams as behavior--characteristics and description</li>
+            <li>Brain function during dreaming</li>
+            <li>Rapid Eye Movements and dreaming</li>
+            <li>Who dreams?</li>
+            <li>Theories of dreaming:
+                <ul>
+                    <li>The psychoanalytic theory (Freud) (Accompanied by a brief intro to psychoanalysis)</li>
+                    <li>The Hall/Cartwright confirmations of and revisions to Freud</li>
+                    <li>Implications of the Dement and Kleitman (REM) work</li>
+                    <li>Physiological theories of dreaming (purging connections, sorting memory, random, activation-synthesis, memory storage, etc.)</li>
+                </ul>
+            </li>
+        </ul>
+
+        <p>We will conclude with the question of whether can we obtain meaningful insights about ourselves through our dreams? With regard to scientific methodology in psychology, some of the discussion will occur in lecture and what we don't cover there, in recitation. The following are the core topics.</p>
+
+        <ul>
+            <li>Basic Methodology
+                <ul>
+                    <li>Experiments: independent and dependent variables</li>
+                    <li>Observational vs experimental studies: causation and correlation</li>
+                    <li>Observational vs experimental studies: causation and correlation</li>
+                </ul>
+            </li>
+            <li>Measurement: The description of data
+                <ul>
+                    <li>Central tendency: means, medians and modes</li>
+                    <li>Variability: variance and standard deviation</li>
+                    <li>Correlation and significance level</li>
+                </ul>
+            </li>
+        </ul>
+
+        <p><a href="http://www.psy.cmu.edu/~kotovsky/85102/readings/Repression.html">Repression reading</a>, <a href="http://www.psy.cmu.edu/~kotovsky/85102/readings/sleepwalking.html">Sleepwalking reading</a>, and <a href="http://www.psy.cmu.edu/~kotovsky/85102/readings/RatDreams.html">Rat Dreams reading</a></p>
+
+
+        <p>Slides: <a href="http://www.psy.cmu.edu/~kotovsky/85102/lectures/slides/dreams.ppt">click here</a></p>
+    </div>
+</li>
+
+<li class="topic">
+    <div class="title"><span>Brain function and evolution of complexity</span></div>
+    <div class="content">
+
+        <p>The major topic for today is the nervous system and its control of behavior. The set of slides on 9/5 cover general organization of the brain while attempting to ground some structures of the brain in their functions.</p>
+
+        <p>The major topics we will be discussing include:</p>
+
+        <ul>
+            <li>A whirlwind tour of brain structure and function</li>
+            <li>An even briefer review of neuroscience methods</li>
+        </ul>
+
+        <p>Slides: <a href="http://www.psy.cmu.edu/~kotovsky/85102/lectures/slides/brainsystems_9_5_ml.pptx">click here</a></p>
+    </div>
+</li>
+
+<li class="topic">
+    <div class="title"><span>Neurons and reflexes: a model</span></div>
+    <div class="content">
+
+        <p>Today's lecture picks up from last Thursday's and includes the following:</p>
+
+        <ul>
+            <li>We will develop a model of how the neuron works, how synapses operate and how these constituents combine to accomplish reflexes and other simple behavior</li>
+            <li>We will then discuss examples of how simple behaviors combine into more complex behavior</li>
+        </ul>
+        
+        <p><a href="http://www.psy.cmu.edu/~kotovsky/85102/readings/braitenberg.pdf">Braitenberg reading</a></p>
+        
+        <p>Slides: <a href="http://www.psy.cmu.edu/~kotovsky/85102/lectures/slides/brain1.ppt">click here</a></p>
+    </div>
+</li>
+
+<li class="topic">
+    <div class="title"><span>Brain, behavior, and thought</span></div>
+    <div class="content">   
+    
+        <p>Today's lecture will complete our discussion of neural transmission and synaptic interactions underlying behavior and how they combine to accomplish behavior.</p>
+
+        <ul>
+            <li>How neural signals are generated and travel.</li>
+            <li>Neural interactions (synapses).</li>
+            <li>Building reflexes out of neural interactions.</li>
+            <li>Increasing complexity.</li>
+            <li>Some brain organizing principles.</li>
+        </ul>
+
+        <p>The slide set for today is a slight modification of that of the previous (Tues.) lecture starting at slide 13 thru slide 33.</p>
+
+    
+        <p><a href="http://brie.library.cmu.edu/reserves2/hlphkotovsky79.pdf">Pinker reading</a> (pg. 1-24)</p>
+        <p>Slides: <a href="http://www.psy.cmu.edu/~kotovsky/85102/lectures/slides/brain1.ppt">click here</a></p>
+    </div>
+</li>
+
+
+<li class="topic">
+    <div class="title"><span>Motivation</span></div>
+    <div class="content">
+    
+        <p>We will first spend a small part of the time completing our discussion of the major organizing principles (lateralization, plasticity, etc.) by which the brain controls behavior and interprets the world.</p>
+
+        <p>We will then move on to a discussion of motivation, examining a number of basic motivations and a general model that helps explain their functioning.</p>
+    
+        <p><a href="http://brie.library.cmu.edu/reserves2/hlphkotovsky79.pdf">Pinker reading</a> (pg. 24-end)</p>
+        <p>Slides: <a href="http://www.psy.cmu.edu/~kotovsky/85102/lectures/slides/motivation.ppt">click here</a></p>
+    </div>
+</li>
+
+<li class="topic">
+    <div class="title"><span>Motivation and emotion</span></div>
+    <div class="content">
+
+        <p>Today we will be completing the discussion of factors that "move us" or underlie or energize our behavior, namely, our motivations. We made a start on this topic Tuesday, so today we will be starting from the 4th point below. For this portion of the lecture we'll use the slide set from Tuesday's class, starting with slide no. 29. Please note that the slide set has been modified a bit so it is worth downloading the new set.</p>
+
+        <p>We will examine the following motivational issues:</p>
+
+        <ul>
+            <li>The major functions of motivation (activation of the organism, directing it towards a goal, and enhancing performance)</li>
+            <li>A typology of motivations: the major types and an interesting idea about how they relate to one another</li>
+            <li>Yerkes-Dodson Law</li>
+            <li>The evolution of the adaptive mechanism of homeostatic control and how control systems operate</li>
+            <li>A basic model of the functioning of primary (physiological) drives, how they fit into the above model, and why they are so important and adaptive</li>
+            <li>Some examples of non-homeostatic motivations and how they fit into an overall structure of our motivations</li>
+        </ul>
+
+        <p>We will then briefly discuss some basic models of emotion.</p>
+
+        <p>Slides: <a href="http://www.psy.cmu.edu/~kotovsky/85102/lectures/slides/motivation.ppt">click here</a></p>
+    </div>
+</li>
+
+
+<li class="topic">
+    <div class="title"><span>Learning: Behaviorist and other views</span></div>
+    <div class="content">
+
+        <p>Today our major focus will be on two basic models of learning, classical and operant conditioning, their implications and how they combine with motivations to produce adaptive behavior. We will then examine some other areas of learning including applications and limitations of behaviorist theories of learning.</p>
+
+        <p>Specific topics include:</p>
+
+        <ul>
+            <li>Pavlov's classical conditioning and how it might be implemented in the nervous system</li>
+            <li>Thorndike's law of Effect and its evolution into Skinner's operant conditioning</li>
+            <li>A model: How operant conditioning operates together with basic motivations as an adaptive mechanism</li>
+            <li>Uses and abuses of operant conditioning</li>
+            <li>Contributions and limitations of behaviorism</li>
+            <li>The power law of practice</li>
+        </ul>
+
+        <p>Slides: <a href="http://www.psy.cmu.edu/~kotovsky/85102/lectures/slides/learning.ppt">click here</a></p>
+    </div>
+</li>
+
+<li class="topic">
+    <div class="title"><span>Sensory systems, especially vision</span></div>
+    <div class="content">
+
+        <p>We are at the beginning of a new section of the course. While the first section focused on the underlying basis of our behavior, the focus of this section will be on our thinking. We will start with the input to the process, sensing and perceiving the world. This of course was an issue in the last section of the course where we saw that behavior often began with a stimulus that had to be sensed (think of the knee jerk example or a taxis). The specific focus today will be on an introduction to some of the major conceptual issues that will frame our analysis of perception, psychophysics, and the auditory system.</p>
+
+        <p>Specific topics include:</p>
+
+        <ul>
+            <li>The nativist-empiricist debate (does all information come in via the senses or is some innate)?</li>
+            <li>Top-down and bottom-up perception and the issue of why we don't see the world as it is</li>
+            <li>The ear and audition</li>
+            <li>Volley and Place theories of hearing</li>
+            <li>Operating characteristics of the auditory system</li>
+            <li>Psychophysics: measuring the response of sensory systems, including absolute and difference thresholds</li>
+            <li>The just noticeable difference (jnd) and Weber's and Fechner's law</li>
+            <li>Power functions (Stevens) and its neural counterpart</li>
+        </ul>
+
+        <p>Slides: <a href="http://www.psy.cmu.edu/~kotovsky/85102/lectures/slides/perception-lec.ppt">click here</a></p>
+    </div>
+</li>
+
+
+<li class="topic">
+    <div class="title"><span>Perception</span></div>
+    <div class="content">
+    
+        <p>In today's lecture we will first first discuss some issues in psychophysics (measurement of sensory thresholds) and then focus on a discussion of the visual system, including its structure and basic operation, and then the higher level processes by which it extracts information from the world.</p>
+
+        <p>Specific topics include:</p>
+
+        <ul>
+            <li>Psychophysics, the relation between the physical world and what is sensed
+                <ul>
+                    <li>Measuring sensory thresholds</li>
+                    <li>Weber's Law</li>
+                    <li>Fechner's extension of Weber's Law</li>
+                    <li>Steven's power function</li>
+                </ul>
+            </li>
+            <li>The structure and function of the eye</li>
+            <li>The centrality and importance of the retina
+            <li>Some operating characteristics of the eye (sensitivity, acuity, adaptation, etc.)</li>
+            <li>Duplex theory of vision (two visual systems)</li>
+            <li>Lateral inhibition and a focus on sensing spatial and temporal change in the world</li>
+            <li>The analysis of visual inputs--some brain functions in feature detection</li>
+            <li>Top-down and bottom-up processes in perception</li>
+        </ul>
+    
+        <p><a href="http://brie.library.cmu.edu/reserves2/hlphkotovsky80.pdf">Loftus reading</a></p>
+        <p>Slides: <a href="http://www.psy.cmu.edu/~kotovsky/85102/lectures/slides/perception-lec.ppt">click here</a></p>
+    </div>
+</li>
+
+<li class="topic">
+    <div class="title"><span>Visual processing</span></div>
+    <div class="content">
+
+        <p>In today's lecture we will complete our discussion of vision and visual information processing, and then proceed to consider perception at a higher level (moving from peripheral sensory processes into some brain processes). In particular, we will move from the underpinnings or workings of bottom up perceptual processes toward a discussion of some of the mechanisms underlying top down, contextually driven processes, and discuss how they work together to actively perceive the world. Finally, given time, we will introduce the topic of attention. The slides are the set from last time starting at slide 53.</p>
+
+        <p>Specific topics include:</p>
+
+        <ul>
+            <li>Operating characteristics of the visual system. Some operating characteristics of the eye (in addition to its duplex nature, sensitivity and acuity), adaptation, etc.)</li>
+            <li>Color vision.</li>
+            <li>Lateral inhibition and a focus on sensing spatial and temporal change in the world
+            <li>The analysis of visual inputs--some brain functions in feature detection</li>
+            <li>Top-down and bottom-up processes in perception</li>
+            <li>Some examples of active perception</li>
+            <li>Contextually driven perceptual processes--the analysis of visual inputs. From lateral inhibition to frogs and cats: neural functioning in feature detection.</li>
+            <li>Feature detection in cats and humans: the same kinds of features when you do single cell recording (cats) or stabilized retinal images (humans).</li>
+            <li>Other examples of feature detection</li>
+            <li>Top down perceptual processes and one model of how they might be implemented. The important role played by context, expectation, motivation, etc. in allowing us to perceive the world. the basic moral is that we're not from Missouri!</li>
+        </ul>
+
+        <p>Slides: <a href="http://www.psy.cmu.edu/~kotovsky/85102/lectures/slides/perception-lec.ppt">click here</a></p>
+    </div>
+</li>
+
+<li class="topic">
+    <div class="title"><span>Attention and immediate memory</span></div>
+    <div class="content">
+
+        <p>In today's lecture we will briefly examine the topic of attention, some of its associated behavior and basic models, and then memory and the processes that accomplish it. The overiding issue we will be examining is what constitutes memory--what is it and what functions does it serve for us. Having looked in the last lecture at how information "gets in" (perception) we'll now consider how it is attended to and stored for use. In addition, we will be taking a much broader view of memory and what it does for us. We'll also examine a multi-store model of memory that divides it up into shorter term and longer term subparts.</p>
+
+        <p>Specific topics include:</p>
+
+        <ul>
+            <li>Basic conceptions of attention: Filter, spotlight, and capacity limitation</li>
+            <li>Very short memories: sensory storage</li>
+            <li>Somewhat longer term storage: Short term memory (STM)--a fundamental bottleneck in our thinking
+                <ul>
+                    <li>What it can hold</li>
+                    <li>How things leave it</li>
+                    <li>How we search for things within it</li>
+                    <li>Another way of looking at it (STM vs Working Memory)</li>
+                    <li>The "bottleneck" issue</li>
+                    <li>Beating the bottleneck--some extreme cases!</li>
+                </ul>
+            </li>
+        </ul>
+
+        <p>Slides: <a href="http://www.psy.cmu.edu/~kotovsky/85102/lectures/slides/Attention-memory.ppt">click here</a></p>
+    </div>
+</li>
+
+
+<li class="topic">
+    <div class="title"><span>Memory functioning</span></div>
+    <div class="content">
+
+        <p>In today's lecture we will continue the study of memory and the processes that accomplish it. Our focus will be on sensory storage and then mainly on short term or working memory (including what distinguishes the two).</p>
+
+        <p>The slides for today include slides 13 to 20 from last time and then the new ones (which overlap those from last Thursday from slide 20 on, but go further).</p>
+
+        <p>Specific topics include:</p>
+
+        <ul>
+            <li>Short term memory (STM)--a fundamental bottleneck in our thinking
+                <ul>
+                    <li>What it can hold</li>
+                    <li>How things leave it</li>
+                    <li>How we search for things within it</li>
+                    <li>Another way of looking at it (STM vs Working Memory)</li>
+                    <li>The "bottleneck" issue</li>
+                    <li>Beating the limits--the work of Chase and Ericcsson: chunks & retrieval structures</li>
+                </ul>
+            </li>
+        </ul>
+        
+        <p><a href="http://brie.library.cmu.edu/reserves2/hlphkotovsky81.pdf">Stratton reading</a></p>
+
+        <p>Slides: <a href="http://www.psy.cmu.edu/~kotovsky/85102/lectures/slides/STM-WM.ppt">click here</a></p>
+    </div>
+</li>
+
+
+<li class="topic">
+    <div class="title"><span>Long-term memory and thinking</span></div>
+    <div class="content">
+
+        <p>In today's lecture we will complete our discussion of STM and consider issues related to the transfer of information into long term memory and then the operation (and a model) of LTM itself.</p>
+
+        <p>Specific topics include:</p>
+
+        <ul>
+            <li>Making things permanent: transfer into Long Term Memory: Rehearsal, Elaborative rehearsal and organization</li>
+            <li>Encoding specificity-the effect of context: Godden & Baddeley exper</li>
+            <li>Codes in memory and thought</li>
+            <li>Brain Processes & memory formation</li>
+            <li>What happens if you can't transfer info to LTM?</li>
+        </ul>
+
+        <p>Finally, we will examine a model of memory storage (for at least verbally encoded symbolic memories) and some experimental evidence for it. We will also consider how this model can provide an account for a range of memory phenomena as well as how this provides a basis for thought.</p>
+
+        <p>Slides: <a href="http://www.psy.cmu.edu/~kotovsky/85102/lectures/slides/STM-WM.ppt">click here</a></p>
+    </div>
+</li>
+
+<li class="topic">
+    <div class="title"><span>Thinking and problem solving</span></div>
+    <div class="content">
+
+        <p>In today's lecture we will describe some different problem types.</p>
+
+        <ul>
+            <li>Well-defined vs. ill-defined problems: Problems where the goal or solution is recognizable--where there is a right answer (ex. a math or physics problem) vs. problems where there is no "right" answer but a range of more or less acceptable answers (ex. design a building or write good short story)</li>
+
+            <li>Knowledge rich vs. knowledge lean problems: problems whose solution depends on specialized knowledge (ex. What is the weight of a liter of carbon dioxide at 1 atmosphere pressure and 40 degrees C?) vs. problems that do not depend on such knowledge (ex. How many weighings on a two pan balance does it take to decide which of 12 similar appearing balls is heavy or light?)</li>
+
+            <li>Insight vs. non-insight problems (those presumably solved "all of a sudden" vs. those solved more incrementally--in a step by step fashion</li>
+        </ul>
+
+        <p>We will also describe some classic work on problem-solving that arose out of the Gestalt tradition in psychology and is also having a continuing effect today.</p>
+
+        <ul>
+            <li>Functional fixedness (the string problem)</li>
+            <li>Problem-solving set (Luchins' work-the water jar problem)</li>
+            <li>Memory for interrupted problems (the Zeigarnik effect)</li>
+        </ul>
+
+        <p>We will then move on to focus on the "modern" period of problem-solving research. New work: the Simon and Newell part of the cognitive revolution in the 1950's. We will be focusing on these issues:</p>
+
+        <ul>
+            <li>Problem solving as search and the size of the search space</li>
+            <li>Methodology: Verbal protocols and computer simulation</li>
+            <li>Problem difficulty and the kind of representation the problem-solver uses in solving the problem</li>
+            <li>Cognitive processing limitations and our ability to solve difficult problems</li>
+            <li>Algorithms and heuristics, including some common heuristics or weak (general) methods, such as total enumeration or trial and error, hill climbing, means-ends-analysis, working backwards, fractionation or subgoaling, etc.</li>
+        </ul>
+
+        <p>Slides: <a href="http://www.psy.cmu.edu/~kotovsky/85102/lectures/slides/prob-exprt.ppt">click here</a></p>
+    </div>
+</li>
+
+<li class="topic">
+    <div class="title"><span>Introduction to language</span></div>
+    <div class="content">
+                
+        <p>Today in lecture, we will complete our discussion of problem solving and expertise, using the remaining slides from the last class. We will then introduce a human ability that many argue separates us from the animals: the ability to use and understand language. We will only be doing the first portion of the material this Tuesday and the remainder on Thursday.</p>
+
+        <p>Here are some of the major themes we will touch on:</p>
+
+        <ul>
+            <li>What is the purpose of language? Why do we speak?</li>
+            <li>Does language separate us from non-human animals? What distinguishes human language from animal communication?</li>
+            <li>Characteristic features of language: generative, displacement, recursive, combinatorial, creative, etc.</li>
+        </ul>
+
+        <p>As described in the Pinker paper, language gives us an amazing power to direct the thoughts and attention of other people. This skill is a foundation of our social and cultural existence!</p>
+        
+        <p><a href="http://brie.library.cmu.edu/reserves2/hlphkotovsky85.pdf">Pinker reading</a></p>
+        <p>Slides: <a href="http://www.psy.cmu.edu/~kotovsky/85102/lectures/slides/Lang-Langdev.ppt">click here</a></p>
+    </div>
+</li>
+
+
+<li class="topic">
+    <div class="title"><span>Development</span></div>
+    <div class="content">
+
+        <p>In today's lecture we will be discussing development, including physical development, some parenting issues and social and cognitive development.</p>
+
+        <ul>
+            <li>Some issues in physical development</li>
+            <li>Parenting & Development</li>
+            <li>Social Development
+                <ul>
+                    <li>Theories of social development</li>
+                    <li>Early Attachment and its implications</li>
+                    <li>Moral Development</li>
+                </ul>
+            </li>
+            <li>Cognitive Development
+                <ul>
+                    <li>The work of Jean Piaget</li>
+                    <li>Subsequent modifications of Piaget's work (the information processing approach)</li>
+                    <li>Some classic cognitive developmental tasks and their implications for how children understand and operate on the world</li>
+                </ul>
+            </li>
+        </ul>
+
+        <p>Slides: <a href="http://www.psy.cmu.edu/~kotovsky/85102/lectures/slides/Gen-Cog-Dev.pptx">click here</a></p>
+    </div>
+</li>
+
+
+<li class="topic">
+    <div class="title"><span>Attitude and beliefs</span></div>
+    <div class="content">
+
+        <p>The discussion today will conclude our discussion of development with an examination of cognitive development (remaining slides from Tuesday's class) begin our focus on social psychology, including many of the social influences and interactions that determine who and what we "are"; the forces that shape our thoughts and behavior.</p>
+
+        <p>Our major focus today will be on the study of attitudes (how they are formed, maintained and changed). Attitudes include cognitive (belief) aspects, evaluative aspects (they have a "for" or "against" component) and tendencies to behave (policy orientations). The major theme of the lecture is about how we strive for consistency among our various attitudes; the amazing lengths to which we go in order to maintain that consistency.</p>
+
+        <p>The maintenance of consistancy, how do we do it?</p>
+
+        <ul>
+            <li>Selective exposure</li>
+            <li>Selective interpretation</li>
+            <li>Selective memory/forgetting</li>
+            <li>The culmination of this is consistency theory, for example, Heider's balance theory</li>
+            <li>How all this plays a role in stereotyping and prejudice</li>
+        </ul>
+
+        <p>Changing attitudes; persuasion and propaganda (inside and outside of elections!)</p>
+
+        <ul>
+            <li>Characteristics of the source of a message</li>
+            <li>Characteristics of the message</li>
+            <li>Characteristics of the recipient</li>
+        </ul>
+
+        <p>Techniques for obtaining compliance/attitude change</p>
+
+        <ul>
+            <li>Justification of the request for compliance</li>
+            <li>Reciprocity-create an obligation</li>
+            <li>Low-ball (obtain committment before upping the ante/price)</li>
+            <li>Foot in the door</li>
+            <li>Door in the face</li>
+            <li>"That's not all"--add something to sweeten the deal at the last moment</li>
+            <li>"Hard to get/exclusive"--"You are only one of five people to get this special offer..."</li>
+            <li>Prestige suggestion--Everyone (or famous people) are doing it</li>
+        </ul>
+
+        <p>Slides: <a href="http://www.psy.cmu.edu/~kotovsky/85102/lectures/slides/soc-psych.ppt">click here</a></p>
+    </div>
+</li>
+
+
+<li class="topic">
+    <div class="title"><span>Attitude consistency theories</span></div>
+    <div class="content">
+    
+        <p>Today we will examine the surprising issue of attitude consistency and a number of theories that account for it. The following theories are all based on the idea that we strive for consistency in our attitudes, beliefs and behavior. While they each have a different focus (on behavior or on attitude for example) they all express aspects of attitude consistency and can thus be labeled as consistency theories.</p>
+
+        <p>Balance theory, Self Perception & Cognitive Dissonance Theory. These are all cognitive consistency theories and we will examine not only the theories, but also how these theories call into question our independence of thought, and raise frightening issues about how capable of being socially influenced or malleable we might be.</p>
+
+        <ul>
+            <li>Balance theory (Heider) Focus on attitude congruence</li>
+            <li>Cognitive dissonance theory (Festinger) Three types of dissonance situations:
+                <ul>
+                    <li>Consequence of decision (Brehm) + post decision dissonance at post time. (Knox & Inkster)</li>
+                    <li>Justification of effort (Aronson & Cope)</li>
+                    <li>External-internal justification Festinger. & Carlsmith severity of threat (Aronson & Carlsmith--toy experiment)</li>
+                </ul>
+            </li>
+            <li>Self perception theory (Bem) and experimental evidence: (Valins, Lepper et al. counterattitudinal advocacy)</li>
+            <li>How the foot in the door and door in the face phenomena illustrate the operation of self perception theory.</li>
+        </ul>    
+    
+        <p><a href="http://brie.library.cmu.edu/reserves2/hlphkotovsky86.pdf">Sherif reading</a></p>
+        <p>Slides: <a href="http://www.psy.cmu.edu/~kotovsky/85102/lectures/slides/soc-psych.ppt">click here</a></p>
+    </div>
+</li>
+
+
+
+<li class="topic">
+    <div class="title"><span>Social influence: conformity, obedience, and personality</span></div>
+    <div class="content">
+    
+        <p>We have examined a number of ways in which our attitudes can be manipulated or changed by outsiders in considering propaganda (and even high pressure automobile sales!) and also at some of the more internal cognitive consistency processes that act to distort our attitudes and beliefs (balance theory and cognitive dissonance theory). We've thus seen ways in which we appear to be weak minded, other directed (Riesman) and easily manipulated by others and by some of our own characteristic behaviors. Today we will complete our discussion of one last consistancy theory, self perception theory. We will then push this issue of our susceptibility to social influence much further in today's lecture when we examine conformity and obedience, to examine the point where we become downright dangerous to each other and to ourselves. But as we do this, it is important to be aware that there is also a danger on the other side--the idealogue who is absolutely convinced of his or her own ideas and willing to go to great lengths and sacrifice much (including others) for his/her ideas. We take a look at these issues now, starting with fairly mild processes and working our way up to the more serious, and finally think a bit about how we might overcome this problem?</p>
+
+        <ul>
+            <li>Self Perception Theory (Bem)</li>
+            <li>Bystandar Apathy (Latane and Darley)</li>
+            <li>Conformity (Asch)</li>
+            <li>Obedience (Milgram)</li>
+            <li>Jonestown, suicide bombers, etc.</li>
+            <li>Korean POW study</li>
+            <li>What cuts across it all? Schein's work on Korean War POWs. Social isolation is the key. Are there ways of checking it out with others without simply conforming? Are there possible inner codes that can allow us to go on without the excesses that are so common? --There have to be. Finding them is a central challenge of the human condition/dilemma.</li>
+        </ul>
+    
+        <p><a href="http://brie.library.cmu.edu/reserves2/hlphkotovsky87.pdf">Milgram reading</a></p>
+        <p>Slides: <a href="http://www.psy.cmu.edu/~kotovsky/85102/lectures/slides/soc-psych.ppt">click here</a></p>
+    </div>
+</li>
+
+<li class="topic">
+    <div class="title"><span>Nature, nurture, and aggression</span></div>
+    <div class="content">
+    
+        <p>The discussion today focuses primarily on some alternative explanations for human aggression after we complete our discussion of obedience. We will first consider a socio-biological explanation that holds that aggression is a normal part of animal behavior (including that of humans) but that human aggression differs due to lack of a safeguard that protects animals against aggression from members of their own species. The basic argument is that animals that are dangerous to each other (that have deadly natural "weapons") have safeguards against excessive maiming or killing such as surrender gestures that ward off further aggression or even ritualized combat where they do not really fight. Non-dangerous animals do not need these safeguards and are less likely to have them. According to this ethological view, humans have, via the invention of weapons as a cultural change, become very dangerous without the evolution of safeguards.</p>
+
+        <p>The alternative viewpoint is a more human-based one, that argues that humans are dangerous to each other not because our behavior resembles aspects of animal behavior, but mainly because of its uniquely human characteristics. The argument is that through our dependence on symbols and on tight social units, evil leaders can incite aggression through appealing to our loyalty to our "group" whatever that might be (religion, nationality, tribe, etc.) and that our brain physiology is such that aggressive centers can be aroused so that our killing arises out of love of our ingroup rather than originating in hatred of the outgroup, although the effect might be the same.</p>
+
+        <p>We finally will turn to a consideration of whether there are parallels between some of the relevant social behaviors of humans and of animals to test whether the sociobiological approach has even face validity.</p>
+
+        <p>If there is time we will introduce the topic of personality theory as well toward the end of the lecture.</p>
+    
+        <p><a href="http://brie.library.cmu.edu/reserves2/hlphkotovsky89.pdf">Koestler reading</a></p>
+        <p>Slides: <a href="http://www.psy.cmu.edu/~kotovsky/85102/lectures/slides/soc-bio.ppt">click here</a></p>
+    </div>
+</li>
+
+<li class="topic">
+    <div class="title"><span>Personality and psychopathology</span></div>
+    <div class="content">
+
+        <p>The discussion today will first clear up a few remaining issues from the last lecture on aggression and related behaviors and then present an overview of personality, including ways of looking at what constitutes personality, the issue of stable personality vs. situationalism (whether personality is stable or lasting) and then some major theories of personality. The focus will then turn to an overview of psychopathology. We will introduce two basic stances or perspectives that are taken with regard to disorders; a biological/medical model and a psychological/experiential one and will consider the following topics from the above two viewpoints:</p>
+
+        <ul>
+            <li>Definitions of abnormality and their implications for therapy</li>
+            <li>Examples of major categories of disorders</li>
+            <li>Who is affected (incidence of disorders)</li>
+            <li>Major underlying causes</li>
+        </ul>
+
+        <p>Slides: <a href="http://www.psy.cmu.edu/~kotovsky/85102/lectures/slides/Personal-Psychopath-treatment.ppt">click here</a></p>
+    </div>
+</li>
+
+
+<li class="topic">
+    <div class="title"><span>Psychopathology</span></div>
+    <div class="content">
+    
+        <p>The discussion today will focus on an overview of psychopathology. We will introduce two basic stances or perspectives that are taken with regard to disorders; a biological/medical model and a psychological/experiential one and will consider the following topics from the above two viewpoints:</p>
+
+        <ul>
+            <li>Definitions of abnormality and their implications for therapy</li>
+            <li>Examples of major and evolving categories of disorders</li>
+            <li>How categories of disorders relate to various personality theories</li>
+            <li>Who is affected (incidence or prevalence of disorders)</li>
+            <li>Major underlying causes</li>
+        </ul>
+
+        <p><a href="http://brie.library.cmu.edu/reserves2/hlphkotovsky91.pdf">Nasar reading</a></p>
+        <p>Slides: <a href="http://www.psy.cmu.edu/~kotovsky/85102/lectures/slides/Personal-Psychopath-treatment.ppt">click here</a></p>
+    </div>
+</li>
+
+
+<li class="topic">
+    <div class="title"><span>Treatment</span></div>
+    <div class="content">
+    
+        <p>The discussion today focuses on an overview of different approaches to treatment of various psychological disorders. Please note that the slides are a continuation of the slides from the last class.</p>
+
+        <p>We will discuss:</p>
+
+        <ul>
+            <li>Broad classes of treatment and how they map onto various classes of disorders</li>
+            <li>How treatment has changed over time and with what effect</li>
+            <li>Outcome studies of treatments (how effective they are)</li>
+            <li>A brief take home message on what to do in the case of trouble</li>
+        </ul>
+
+        <p>We will then turn to some summary statements about the course and the final exam.</p> 
+    
+        <p><a href="http://www.psy.cmu.edu/~kotovsky/85102/readings/SCZ.html">Schizophrenia reading</a></p>
+        <p>Slides: <a href="http://www.psy.cmu.edu/~kotovsky/85102/lectures/slides/Personal-Psychopath-treatment.ppt">click here</a></p>
+    </div>
+</li>
+
+        </ul>
+    </td>
+    <td style="width: 400px;">
+    
+<h1>Instructions</h1>
+
+<p>We need your help outlining a new <b>psychology</b> course for university students.</p>
+
+<p>There are two course outlines (A and B) on the left.</p>
+<ol>
+<li>Look at the <span class="directed">focus topic</span> in course A.</li>
+<li>Click any topics in course B that are related to the focus topic.</li>
+<li>Choose a name for the group.</li>
+<li>Click the "Add group" button.</li>
+</ol>
+
+<p>You can include the <span class="directed">focus topic</span> in multiple groups.</p>
+
+<p>Groups can include as many topics as necessary, as long as there is at least one topic from both courses.</p>
+
+<div id="relatedTopics">
+
+<h2>New group</h2>
+    
+    <p>Name this group of topics:</p>
+    <input type="text" id="groupName" name="groupName" style="width: 300px;" />    
+    <br />
+    <button id="btnAddGroup">Add group</button>
+
+</div>
+
+<form id="form1" name="form1" method="POST" action="">
+
+    <div id="finished">
+
+        <h2>What next?</h2>
+
+        <p>If there are no topics related to the focus topic, or you're done grouping this focus topic, click the button below.</p>
+
+        <button id="btnNextTopic">Next topic</button>
+
+    </div>
+
+    <div id="yourGroups">
+
+        <h2>Your groups</h2>
+    
+        <ul id="groupList"></ul>
+
+        <div id="groupData"></div>
+    
+    </div>
+
+</form>
+
+    </td>
+    
+</tr>
+
+</table>
+
